@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<title>Stats Tracker — Final Boss</title>
+
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+
+<meta name="theme-color" content="#0b1220" id="metaThemeColor">
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+<style>
+:root{
+  --bg-1:#0b1220; --bg-2:#0f1724;
+  --glass: rgba(255,255,255,0.04);
+  --glass-border: rgba(255,255,255,0.06);
+  --accent-from: #6366f1; --accent-to: #a855f7;
+  --positive: #10b981; --negative: #ef4444; --neutral: #9ca3af;
+  --card-radius: 14px;
+}
+.light {
+  --bg-1: #f5f7fb; --bg-2: #eef2ff;
+  --glass: rgba(10,10,10,0.04);
+  --glass-border: rgba(10,10,10,0.06);
+  color: #071029;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;
+  font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  background: linear-gradient(135deg,var(--bg-1),var(--bg-2));
+  color: #e6eef8;
+  min-height:100vh;
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  padding:20px 12px 80px;
+}
+.app-shell{width:100%;max-width:760px;}
+.header{display:flex;gap:12px;align-items:center;justify-content:space-between;margin-bottom:18px;}
+.brand{display:flex;gap:12px;align-items:center;}
+.logo {width:44px;height:44px;border-radius:10px;background:linear-gradient(90deg,var(--accent-from),var(--accent-to));display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff;font-size:18px;box-shadow:0 6px 24px rgba(168,85,247,0.14);}
+.title {font-size:18px;font-weight:700;letter-spacing:0.4px;}
+.controls {display:flex;gap:8px;align-items:center;}
+.card {background: var(--glass);border:1px solid var(--glass-border);border-radius: var(--card-radius);padding:14px;backdrop-filter: blur(10px) saturate(120%);box-shadow: 0 6px 30px rgba(2,6,23,0.35);}
+.add-panel{display:flex;gap:10px;align-items:center;margin-bottom:14px;}
+.input{flex:1;padding:10px 12px;border-radius:10px;border:none;background:rgba(255,255,255,0.03);color:inherit;font-weight:600;outline:none;box-shadow: inset 0 -1px 0 rgba(255,255,255,0.02);}
+.btn{padding:10px 14px;border-radius:999px;border:none;cursor:pointer;font-weight:700;background:linear-gradient(90deg,var(--accent-from),var(--accent-to));color:white;box-shadow:0 8px 28px rgba(99,102,241,0.12);}
+.icon-btn{background:transparent;border:1px solid var(--glass-border);padding:8px;border-radius:10px;color:inherit;cursor:pointer;}
+.stats-list{display:flex;flex-direction:column;gap:12px}
+.stat-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.stat-left{display:flex;align-items:center;gap:12px}
+.stat-bubble{width:52px;height:52px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;color:inherit;background:linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.02));}
+.stat-title{font-weight:700}
+.stat-actions{display:flex;gap:8px;align-items:center}
+.small-btn{padding:8px 10px;border-radius:10px;border:none;cursor:pointer;font-weight:700;background:transparent;border:1px solid var(--glass-border);}
+.summary{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;}
+.total-box{display:flex;flex-direction:column;align-items:flex-start;gap:6px;}
+.total-val{font-size:20px;font-weight:800;color:var(--accent-from);}
+.chart-wrap{margin-top:10px;border-radius:12px;padding:12px;background:linear-gradient(180deg,rgba(255,255,255,0.02),transparent);border:1px solid var(--glass-border);}
+.small{font-size:12px;opacity:0.85;}
+@media (max-width:480px){.stat-bubble{width:44px;height:44px;font-size:14px}.title{font-size:16px}}
+</style>
+</head>
+<body>
+
+<div class="app-shell">
+  <div class="header">
+    <div class="brand">
+      <div class="logo">S</div>
+      <div>
+        <div class="title">Stats Tracker</div>
+        <div class="small">Offline • Installable • Pro UI</div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <button class="icon-btn" id="themeToggle" title="Toggle theme">🌓</button>
+      <button class="icon-btn" id="installBtn" style="display:none">➕ Install</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="summary" style="align-items:center;">
+      <div class="total-box">
+        <div class="small">Total</div>
+        <div class="total-val" id="totalDisplay">0</div>
+      </div>
+      <div style="flex:1"></div>
+      <div style="width:260px">
+        <div class="small">Live Overview</div>
+        <div class="chart-wrap">
+          <canvas id="statsChart" width="400" height="120"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div style="height:12px"></div>
+
+    <div class="add-panel">
+      <input id="statName" class="input" placeholder="Enter new stat (e.g., Push-ups)" />
+      <button class="btn" onclick="addStat()">Add</button>
+    </div>
+
+    <div id="statsList" class="stats-list"></div>
+    <div style="height:8px"></div>
+    <div class="small">Tip: tap + to increase, - to decrease below zero, 🗑️ to delete. Add to Home Screen to install.</div>
+  </div>
+
+  <div style="height:14px"></div>
+
+  <div style="display:flex;gap:8px;justify-content:center">
+    <button class="small-btn" onclick="exportStats()">Export JSON</button>
+    <button class="small-btn" onclick="importStatsPrompt()">Import JSON</button>
+    <button class="small-btn" onclick="resetAll()">Clear All</button>
+  </div>
+
+  <div style="height:18px"></div>
+  <div class="small" style="text-align:center">Saved locally 💾 · Works offline after first load · PWA ready</div>
+</div>
+
+<audio id="popSound" preload="auto">
+  <source src="https://www.soundjay.com/buttons/sounds/button-16.mp3" type="audio/mpeg">
+</audio>
+
+<script>
+let stats = JSON.parse(localStorage.getItem('stats')) || {};
+const popSound = document.getElementById('popSound');
+
+/* Chart setup */
+let chart;
+function createChart(){
+  const ctx = document.getElementById('statsChart').getContext('2d');
+  chart = new Chart(ctx, {
+    type: 'bar',
+    data: { labels: [], datasets: [{ label: 'Stats', data: [], backgroundColor: [], borderRadius: 8 }] },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend:{ display:false } },
+      scales: {
+        x: { grid: { display:false }, ticks: { color: 'rgba(255,255,255,0.9)' } },
+        y: { grid: { color:'rgba(255,255,255,0.04)' }, ticks: { color: 'rgba(255,255,255,0.8)' } }
+      }
+    }
+  });
+}
+
+/* color utilities */
+function randomAccentColor(val){
+  const darkMode = localStorage.getItem('themeDark') === '1';
+  if(val>0) return darkMode ? 'rgba(16,185,129,0.15)' : 'rgba(16,185,129,0.3)';
+  if(val<0) return darkMode ? 'rgba(239,68,68,0.12)' : 'rgba(239,68,68,0.25)';
+  return darkMode ? 'rgba(156,163,175,0.08)' : 'rgba(156,163,175,0.18)';
+}
+function randomTextColor(val){
+  const darkMode = localStorage.getItem('themeDark') === '1';
+  if(val>0) return darkMode ? '#10b981' : '#065f46';
+  if(val<0) return darkMode ? '#ef4444' : '#991b1b';
+  return darkMode ? '#9ca3af' : '#374151';
+}
+
+/* add stat */
+function addStat(){
+  const name = (document.getElementById('statName').value || '').trim();
+  if(!name) { alert('Enter a stat name bro'); return; }
+  if(!stats[name]) stats[name] = 0;
+  document.getElementById('statName').value='';
+  saveStats();
+}
+
+/* increment / decrement / delete */
+function incrementStat(name){ stats[name]++; animate(name); saveStats(); }
+function decrementStat(name){ stats[name]--; animate(name); saveStats(); }
+function deleteStat(name){ if(!confirm('Delete "'+name+'"?')) return; delete stats[name]; saveStats(); }
+
+/* animation */
+function animate(name){
+  const el = document.getElementById('stat-'+cssSafe(name));
+  if(el){ el.classList.add('pop'); popSound.currentTime=0; popSound.play().catch(()=>{}); setTimeout(()=>el.classList.remove('pop'),240); }
+}
+function cssSafe(name){ return name.replace(/[^a-z0-9\-_]/gi,'_'); }
+
+function updateUI(){
+  const list = document.getElementById('statsList');
+  list.innerHTML='';
+  let total = 0;
+  const labels=[], data=[], colors=[];
+  const darkMode = localStorage.getItem('themeDark') === '1';
+
+  for(const k of Object.keys(stats)){
+    stats[k] = Number(stats[k]);
+    total += stats[k];
+    labels.push(k); data.push(stats[k]); colors.push(randomAccentColor(stats[k]));
+
+    const row = document.createElement('div'); row.className='stat-row'; row.id='stat-'+cssSafe(k);
+    const left = document.createElement('div'); left.className='stat-left';
+
+    const bubble = document.createElement('div'); bubble.className='stat-bubble card';
+    bubble.innerText = stats[k]; 
+    bubble.style.color = randomTextColor(stats[k]);
+    bubble.style.background = randomAccentColor(stats[k]);
+
+    const titleWrap = document.createElement('div'); 
+    const title = document.createElement('div'); title.className='stat-title'; title.innerText=k;
+    titleWrap.appendChild(title);
+    left.appendChild(bubble); left.appendChild(titleWrap);
+
+    const actions = document.createElement('div'); actions.className='stat-actions';
+    const inc = document.createElement('button'); inc.className='small-btn'; inc.innerText='+'; inc.onclick = ()=>incrementStat(k);
+    const dec = document.createElement('button'); dec.className='small-btn'; dec.innerText='-'; dec.onclick = ()=>decrementStat(k);
+    const del = document.createElement('button'); del.className='small-btn'; del.innerText='🗑️'; del.onclick = ()=>deleteStat(k);
+
+    [inc, dec, del].forEach(btn=>{
+      btn.style.borderColor = darkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.12)';
+      btn.style.color = darkMode ? '#e6eef8' : '#071029';
+    });
+
+    actions.appendChild(inc); actions.appendChild(dec); actions.appendChild(del);
+
+    row.appendChild(left); row.appendChild(actions);
+    list.appendChild(row);
+  }
+
+  document.getElementById('totalDisplay').innerText = total;
+
+  if(chart){
+    chart.data.labels = labels;
+    chart.data.datasets[0].data = data;
+    chart.data.datasets[0].backgroundColor = colors.map(c=>c.replace('0.12','0.25').replace('0.15','0.3').replace('0.08','0.12'));
+    chart.update();
+  }
+}
+
+/* export/import */
+function exportStats(){ const a=document.createElement('a'); a.href='data:application/json;charset=utf-8,'+encodeURIComponent(JSON.stringify(stats)); a.download='stats.json'; document.body.appendChild(a); a.click(); a.remove(); }
+function importStatsPrompt(){ const txt=prompt('Paste JSON of your stats (existing will be replaced):'); if(!txt) return; try{ const obj=JSON.parse(txt); if(typeof obj==='object'){ stats=obj; saveStats(); alert('Imported!'); } else alert('Invalid JSON'); } catch(e){ alert('Bad JSON bro'); } }
+function resetAll(){ if(confirm('Clear all stats?')){ stats={}; saveStats(); } }
+
+/* save + update */
+function saveStats(){ localStorage.setItem('stats',JSON.stringify(stats)); updateUI(); }
+
+/* theme */
+const themeBtn=document.getElementById('themeToggle');
+function applyTheme(dark){
+  if(dark){ document.documentElement.classList.remove('light'); document.getElementById('metaThemeColor').setAttribute('content','#0b1220'); }
+  else{ document.documentElement.classList.add('light'); document.getElementById('metaThemeColor').setAttribute('content','#f5f7fb'); }
+  localStorage.setItem('themeDark',dark?'1':'0');
+  updateUI(); // update colors
+}
+themeBtn.onclick = ()=>{ const isDark = localStorage.getItem('themeDark')==='1'; applyTheme(!isDark); }
+
+(function initTheme(){
+  const saved = localStorage.getItem('themeDark');
+  if(saved!==null) applyTheme(saved==='1');
+  else { const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches; applyTheme(prefersDark); }
+})();
+
+/* boot */
+createChart();
+updateUI();
+
+/* service worker */
+if('serviceWorker' in navigator){ navigator.serviceWorker.register('/sw.js').then(()=>console.log('SW registered')).catch(()=>console.warn('SW failed')); }
+
+/* PWA install */
+let deferredPrompt;
+const installBtn=document.getElementById('installBtn');
+window.addEventListener('beforeinstallprompt',(e)=>{ e.preventDefault(); deferredPrompt=e; installBtn.style.display='inline-block'; });
+installBtn.addEventListener('click',async()=>{ if(!deferredPrompt) return; deferredPrompt.prompt(); deferredPrompt=null; installBtn.style.display='none'; });
+</script>
+
+</body>
+</html>
